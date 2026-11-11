@@ -13,4 +13,15 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <build>
+        <directory>${project.basedir}/project/target</directory>
+        <sourceDirectory>project/src/main/java</sourceDirectory>
+        <testSourceDirectory>project/src/test/java</testSourceDirectory>
+        <resources>
+            <resource>
+                <directory>project/src/main/resources</directory>
+            </resource>
+        </resources>
+    </build>
+
 </project>
