@@ -24,6 +24,7 @@ public class PaintCanvas extends JPanel implements MouseListener, MouseMotionLis
         obj = new Circle();
         obj.moveto(x,y);
         objList.add(obj);
+        System.out.println("描画した円の数： " + objList.size());
         obj = null;
         repaint();
     }
@@ -35,6 +36,7 @@ public class PaintCanvas extends JPanel implements MouseListener, MouseMotionLis
         obj = new Circle();
         obj.moveto(x,y);
         objList.add(obj);
+        System.out.println("描画した円の数： " + objList.size());
         obj = null;
         repaint();
     }
@@ -46,6 +48,7 @@ public class PaintCanvas extends JPanel implements MouseListener, MouseMotionLis
         obj = new Circle();
         obj.moveto(x,y);
         objList.add(obj);
+        System.out.println("描画した円の数： " + objList.size());
         obj = null;
         repaint();
     }
@@ -63,6 +66,7 @@ public class PaintCanvas extends JPanel implements MouseListener, MouseMotionLis
             f = objList.get(i);
             f.paint(g2);
         }
+        // System.out.println("描画した円の数： " + objList.size());
         if(obj != null) obj.paint(g2);
     }
 }
