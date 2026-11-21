@@ -1,55 +1,54 @@
 package nw.report;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.*;
 
 public class PaintCanvas extends JPanel implements MouseListener, MouseMotionListener {
-    Figure obj = null;
-    double x, y;
-    ArrayList<Figure> objList;
+    static final int UNLIMITED = -1;
+
+    private final Deque<Figure> figures = new ArrayDeque<>();
+    private final int circleLimit;
+    private long totalCircleCount;
 
     PaintCanvas() {
-        objList = new ArrayList<Figure>();
+        this(UNLIMITED);
+    }
+
+    PaintCanvas(int circleLimit) {
+        this.circleLimit = circleLimit;
         addMouseListener(this);
         addMouseMotionListener(this);
     }
 
     @Override public void mousePressed(MouseEvent e) {
-        Point2D p = e.getPoint();
-        x = p.getX();
-        y = p.getY();
-        obj = new Circle();
-        obj.moveto(x,y);
-        objList.add(obj);
-        System.out.println("描画した円の数： " + objList.size());
-        obj = null;
-        repaint();
+        addCircle(e);
     }
 
     @Override public void mouseDragged(MouseEvent e) {
-        Point2D p = e.getPoint();
-        x = p.getX();
-        y = p.getY();
-        obj = new Circle();
-        obj.moveto(x,y);
-        objList.add(obj);
-        System.out.println("描画した円の数： " + objList.size());
-        obj = null;
-        repaint();
+        addCircle(e);
     }
 
     @Override public void mouseReleased(MouseEvent e) {
-        Point2D p = e.getPoint();
-        x = p.getX();
-        y = p.getY();
-        obj = new Circle();
-        obj.moveto(x,y);
-        objList.add(obj);
-        System.out.println("描画した円の数： " + objList.size());
-        obj = null;
+        addCircle(e);
+    }
+
+    private void addCircle(MouseEvent e) {
+        if (circleLimit == 0) {
+            return;
+        }
+
+        Circle circle = new Circle();
+        circle.moveto(e.getX(), e.getY());
+        figures.addLast(circle);
+        if (circleLimit != UNLIMITED && figures.size() > circleLimit) {
+            figures.removeFirst();
+        }
+
+        totalCircleCount++;
+        System.out.println("描画した円の数： " + totalCircleCount);
         repaint();
     }
 
@@ -61,12 +60,8 @@ public class PaintCanvas extends JPanel implements MouseListener, MouseMotionLis
     @Override protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
-        Figure f;
-        for(int i=0; i < objList.size(); i++){
-            f = objList.get(i);
-            f.paint(g2);
+        for (Figure figure : figures) {
+            figure.paint(g2);
         }
-        // System.out.println("描画した円の数： " + objList.size());
-        if(obj != null) obj.paint(g2);
     }
 }
