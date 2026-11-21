@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Paint2",
+            "request": "launch",
+            "mainClass": "nw.report.Paint2",
+            "projectName": "project",
+            "console": "integratedTerminal"
+        },
+        {
+            "type": "java",
+            "name": "Paint2（引数を指定して実行）",
+            "request": "launch",
+            "mainClass": "nw.report.Paint2",
+            "projectName": "project",
+            "args": "${command:SpecifyProgramArgs}",
+            "console": "integratedTerminal"
+        }
+    ]
+}
