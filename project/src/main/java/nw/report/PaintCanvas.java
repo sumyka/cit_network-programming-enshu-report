@@ -18,6 +18,7 @@ public class PaintCanvas extends JPanel implements MouseListener, MouseMotionLis
     private final int rectLimit;
     private long totalCircleCount;
     private long totalRectCount;
+    private double figureSize = 10.0;
 
     PaintCanvas() {
         this(UNLIMITED);
@@ -32,6 +33,7 @@ public class PaintCanvas extends JPanel implements MouseListener, MouseMotionLis
         this.rectLimit = rectLimit;
         addMouseListener(this);
         addMouseMotionListener(this);
+        addMouseWheelListener(this::resizeNextFigure);
     }
 
     @Override public void mousePressed(MouseEvent e) {
@@ -46,6 +48,13 @@ public class PaintCanvas extends JPanel implements MouseListener, MouseMotionLis
         addFigure(e);
     }
 
+    private void resizeNextFigure(MouseWheelEvent e) {
+        // macOSでは水平スクロールをこれで受け取る
+        if (!e.isShiftDown()) {
+            figureSize = Math.max(1.0, figureSize - 2.0 * e.getPreciseWheelRotation());
+        }
+    }
+
     private boolean isPressedShiftkey(MouseEvent e) {
         return e.isShiftDown();
     }
@@ -55,13 +64,18 @@ public class PaintCanvas extends JPanel implements MouseListener, MouseMotionLis
             if (rectLimit == 0) {
                 return;
             }
-            addFigure(new Rect(), e, rectLimit, visibleRects);
+            Rect rect = new Rect();
+            rect.width = figureSize;
+            rect.height = figureSize;
+            addFigure(rect, e, rectLimit, visibleRects);
             totalRectCount++;
         } else {
             if (circleLimit == 0) {
                 return;
             }
-            addFigure(new Circle(), e, circleLimit, visibleCircles);
+            Circle circle = new Circle();
+            circle.size = figureSize;
+            addFigure(circle, e, circleLimit, visibleCircles);
             totalCircleCount++;
         }
         System.out.println("描画した円：" + totalCircleCount + ", 描画した四角形: " + totalRectCount);
