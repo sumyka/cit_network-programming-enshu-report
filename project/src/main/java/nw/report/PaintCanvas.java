@@ -2,6 +2,8 @@ package nw.report;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -9,46 +11,71 @@ import java.awt.event.*;
 public class PaintCanvas extends JPanel implements MouseListener, MouseMotionListener {
     static final int UNLIMITED = -1;
 
-    private final Deque<Figure> figures = new ArrayDeque<>();
+    private final Set<Figure> figures = new LinkedHashSet<>();
+    private final Deque<Circle> visibleCircles = new ArrayDeque<>();
+    private final Deque<Rect> visibleRects = new ArrayDeque<>();
     private final int circleLimit;
+    private final int rectLimit;
     private long totalCircleCount;
+    private long totalRectCount;
 
     PaintCanvas() {
         this(UNLIMITED);
     }
 
     PaintCanvas(int circleLimit) {
+        this(circleLimit, UNLIMITED);
+    }
+
+    PaintCanvas(int circleLimit, int rectLimit) {
         this.circleLimit = circleLimit;
+        this.rectLimit = rectLimit;
         addMouseListener(this);
         addMouseMotionListener(this);
     }
 
     @Override public void mousePressed(MouseEvent e) {
-        addCircle(e);
+        addFigure(e);
     }
 
     @Override public void mouseDragged(MouseEvent e) {
-        addCircle(e);
+        addFigure(e);
     }
 
     @Override public void mouseReleased(MouseEvent e) {
-        addCircle(e);
+        addFigure(e);
     }
 
-    private void addCircle(MouseEvent e) {
-        if (circleLimit == 0) {
-            return;
-        }
+    private boolean isPressedShiftkey(MouseEvent e) {
+        return e.isShiftDown();
+    }
 
-        Circle circle = new Circle();
-        circle.moveto(e.getX(), e.getY());
-        figures.addLast(circle);
-        if (circleLimit != UNLIMITED && figures.size() > circleLimit) {
-            figures.removeFirst();
+    private void addFigure(MouseEvent e) {
+        if (isPressedShiftkey(e)) {
+            if (rectLimit == 0) {
+                return;
+            }
+            addFigure(new Rect(), e, rectLimit, visibleRects);
+            totalRectCount++;
+        } else {
+            if (circleLimit == 0) {
+                return;
+            }
+            addFigure(new Circle(), e, circleLimit, visibleCircles);
+            totalCircleCount++;
         }
+        System.out.println("描画した円：" + totalCircleCount + ", 描画した四角形: " + totalRectCount);
+    }
 
-        totalCircleCount++;
-        System.out.println("描画した円の数： " + totalCircleCount);
+    private <T extends Figure> void addFigure(T figure, MouseEvent e, int limit, Deque<T> visibleFigures) {
+        figure.moveto(e.getX(), e.getY());
+        figures.add(figure);
+        if (limit != UNLIMITED) {
+            visibleFigures.addLast(figure);
+            if (visibleFigures.size() > limit) {
+                figures.remove(visibleFigures.removeFirst());
+            }
+        }
         repaint();
     }
 
