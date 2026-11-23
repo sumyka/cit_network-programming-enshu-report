@@ -1,21 +1,24 @@
 package nw.report;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.Point2D;
 
 public class PaintCanvas extends JPanel implements MouseListener, MouseMotionListener {
     static final int UNLIMITED = -1;
 
     private final Set<Figure> figures = new LinkedHashSet<>();
-    private final Deque<Circle> visibleCircles = new ArrayDeque<>();
-    private final Deque<Rect> visibleRects = new ArrayDeque<>();
-    private final int circleLimit;
-    private final int rectLimit;
+    private final FigureHistory circleHistory;
+    private final FigureHistory rectHistory;
+    private final DrawingModes drawingModes = new DrawingModes();
     private long totalCircleCount;
     private long totalRectCount;
     private double figureSize = 10.0;
@@ -29,11 +32,12 @@ public class PaintCanvas extends JPanel implements MouseListener, MouseMotionLis
     }
 
     PaintCanvas(int circleLimit, int rectLimit) {
-        this.circleLimit = circleLimit;
-        this.rectLimit = rectLimit;
+        circleHistory = new FigureHistory(circleLimit);
+        rectHistory = new FigureHistory(rectLimit);
         addMouseListener(this);
         addMouseMotionListener(this);
         addMouseWheelListener(this::resizeNextFigure);
+        drawingModes.bindTo(this);
     }
 
     @Override public void mousePressed(MouseEvent e) {
@@ -60,37 +64,47 @@ public class PaintCanvas extends JPanel implements MouseListener, MouseMotionLis
     }
 
     private void addFigure(MouseEvent e) {
+        int added;
         if (isPressedShiftkey(e)) {
-            if (rectLimit == 0) {
-                return;
-            }
-            Rect rect = new Rect();
-            rect.width = figureSize;
-            rect.height = figureSize;
-            addFigure(rect, e, rectLimit, visibleRects);
-            totalRectCount++;
+            added = addFigures(e, this::createRect, rectHistory);
+            totalRectCount += added;
         } else {
-            if (circleLimit == 0) {
-                return;
-            }
-            Circle circle = new Circle();
-            circle.size = figureSize;
-            addFigure(circle, e, circleLimit, visibleCircles);
-            totalCircleCount++;
+            added = addFigures(e, this::createCircle, circleHistory);
+            totalCircleCount += added;
         }
-        System.out.println("描画した円：" + totalCircleCount + ", 描画した四角形: " + totalRectCount);
+        if (added > 0) {
+            System.out.println("描画した円：" + totalCircleCount + ", 描画した四角形: " + totalRectCount);
+            repaint();
+        }
     }
 
-    private <T extends Figure> void addFigure(T figure, MouseEvent e, int limit, Deque<T> visibleFigures) {
-        figure.moveto(e.getX(), e.getY());
-        figures.add(figure);
-        if (limit != UNLIMITED) {
-            visibleFigures.addLast(figure);
-            if (visibleFigures.size() > limit) {
-                figures.remove(visibleFigures.removeFirst());
-            }
+    private Rect createRect() {
+        Rect rect = new Rect();
+        rect.width = figureSize;
+        rect.height = figureSize;
+        return rect;
+    }
+
+    private Circle createCircle() {
+        Circle circle = new Circle();
+        circle.size = figureSize;
+        return circle;
+    }
+
+    private int addFigures(MouseEvent e, Supplier<Figure> createFigure, FigureHistory history) {
+        List<Point2D.Double> points = drawingModes.drawingPoints(e.getX(), e.getY(), getWidth(), getHeight());
+        if (history.limit != UNLIMITED && points.size() > history.limit) {
+            return 0;
         }
-        repaint();
+
+        List<Figure> group = new ArrayList<>(points.size());
+        for (Point2D.Double point : points) {
+            Figure figure = createFigure.get();
+            figure.moveto(point.x, point.y);
+            group.add(figure);
+        }
+        history.add(group, figures);
+        return group.size();
     }
 
     @Override public void mouseEntered(MouseEvent e) {}
@@ -101,8 +115,32 @@ public class PaintCanvas extends JPanel implements MouseListener, MouseMotionLis
     @Override protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
+        drawingModes.paintGuide(g2, getWidth(), getHeight());
         for (Figure figure : figures) {
             figure.paint(g2);
+        }
+    }
+
+    private static final class FigureHistory {
+        private final int limit;
+        private final Deque<List<Figure>> groups = new ArrayDeque<>();
+        private int visibleCount;
+
+        private FigureHistory(int limit) {
+            this.limit = limit;
+        }
+
+        private void add(List<Figure> group, Set<Figure> figures) {
+            if (limit != UNLIMITED) {
+                while (visibleCount > limit - group.size()) {
+                    List<Figure> oldest = groups.removeFirst();
+                    figures.removeAll(oldest);
+                    visibleCount -= oldest.size();
+                }
+                groups.addLast(group);
+                visibleCount += group.size();
+            }
+            figures.addAll(group);
         }
     }
 }
