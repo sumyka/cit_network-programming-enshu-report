@@ -49,7 +49,6 @@ public class PaintCanvas extends JPanel implements MouseListener, MouseMotionLis
     }
 
     @Override public void mouseReleased(MouseEvent e) {
-        addFigure(e);
     }
 
     private void resizeNextFigure(MouseWheelEvent e) {
